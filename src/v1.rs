@@ -1,12 +1,14 @@
 use std::collections::HashMap;
 use std::sync::LazyLock;
+use std::io;
 use std::time::{Duration, SystemTime};
 use crate::Result;
 use actix_web::{web, HttpResponse, Responder};
+use actix_web::http::Uri;
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use crate::cache::{Cache};
-use crate::config::Config;
+use crate::config::{Config, WeatherConfig};
 
 pub fn v1() -> actix_web::Scope {
     actix_web::web::scope("/v1")
@@ -38,7 +40,7 @@ pub struct WeatherState {
 }
 
 #[actix_web::get("/forecast")]
-pub async fn forecast(newer_than: Option<actix_web::web::Header<actix_web::http::header::Date>>, query: web::Query<ForecastParams>) -> Result<impl Responder> {
+pub async fn forecast(newer_than: Option<actix_web::web::Header<actix_web::http::header::Date>>, query: web::Query<ForecastParams>, config: web::Data<Config>) -> Result<impl Responder> {
     if let Some(newer_than) = newer_than {
         let newer_than = SystemTime::from(newer_than.0.0);
 
@@ -49,6 +51,18 @@ pub async fn forecast(newer_than: Option<actix_web::web::Header<actix_web::http:
     }
 
     let weather = WEATHER_CACHE.get(query.0, async || {
+        let api = match reqwest::ClientBuilder::new()
+            .build() {
+            Ok(client) => client,
+            Err(err) => return Err(io::Error::other(err))
+        };
+
+        api.get("https://api.open-meteo.com/v1/forecast")
+            .query(&WeatherConfig {
+                
+            })
+            .header("Accept", "application/json");
+
         Ok(WeatherState {
             time: SystemTime::now(),
             response: serde_json::json! {{
