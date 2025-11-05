@@ -1,20 +1,15 @@
-mod config;
-mod v1;
 mod cache;
+mod v1;
 
-use actix_web::{HttpResponse, Responder, web};
-pub use std::io;
-
-pub type Result<T> = core::result::Result<T, io::Error>;
+use std::io;
+use actix_web::{web, HttpResponse, Responder};
+use common::prelude::*;
 
 #[actix_web::main]
 pub async fn main() -> Result<()> {
     env_logger::init();
 
-    let args: config::CliArgs = clap::Parser::parse();
-    let config: config::Config = tokio::fs::read_to_string(&args.config)
-        .await
-        .and_then(|config| toml::from_str(&config).map_err(io::Error::other))?;
+    let config = common::get_config().await?;
 
     log::debug!("Using config: {config:#?}");
 

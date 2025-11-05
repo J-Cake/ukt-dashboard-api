@@ -9,3 +9,7 @@ hourly = ["temperature_2m", "rain", "precipitation", "wind_speed_10m"]
 daily = ["precipitation_sum", "temperature_2m_max", "temperature_2m_min", "wind_speed_10m_max"]
 models = ["icon_seamless"]
 timezone = "Europe/Berlin"
+
+[departure]
+point = "de:08416:10715"
+lines = []

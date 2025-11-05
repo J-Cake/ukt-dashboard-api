@@ -10,5 +10,17 @@ If-Modified-Since: {{$timestamp}}
 
 ###
 
+GET http://localhost:1920/v1/buses
+Authorization: Bearer {{$auth.token("mobidata-bw@nvbw.de")}}
+If-Modified-Since: {{$timestamp}}
+
+> {%
+    client.test("Request executed successfully", function () {
+        client.assert(response.status === 200 || response.status === 304, "Response status is not okay");
+    });
+%}
+
+###
+
 GET http://localhost:1920/v1/config
 Authorization: Bearer {{$auth.token("mobidata-bw@nvbw.de")}}
