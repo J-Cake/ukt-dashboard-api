@@ -1,0 +1,56 @@
+name: 'azubitafel'
+
+services:
+  public:
+    image: 'caddy:latest'
+    container_name: 'public'
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - data:/data
+      - config:/config
+      - www:/www
+    command: ["caddy", "run", "-c", "/config/Caddyfile"]
+
+  api:
+    build:
+      context: '..'
+      dockerfile: './dev/Dockerfile'
+      target: api
+    container_name: 'api'
+    restart: 'unless-stopped'
+    volumes:
+      - config:/config
+    command: ["api", "-c", "/config/config.toml"]
+
+  kiosk:
+    build:
+      context: '..'
+      dockerfile: './dev/Dockerfile'
+      target: api
+    devices:
+      - /dev/dri:/dev/dri
+      - /dev/input:/dev/input
+    container_name: 'kiosk'
+    restart: unless-stopped
+    environment:
+      - XDG_RUNTIME_DIR=/tmp
+      - KIOSK_HOME=http://public
+
+volumes:
+  data:
+  config:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '../dev'
+  www:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '../www/build'

@@ -25,9 +25,14 @@ pub struct BindConfig {
 pub struct WeatherConfig {
     pub latitude: f32,
     pub longitude: f32,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub forecast_days: Option<u16>,
     pub daily: Vec<String>,
     pub hourly: Vec<String>,
     pub current: Vec<String>,
-    pub models: String,
-    pub timezone: String
+    pub models: Vec<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timezone: Option<String>
 }
