@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 use serde::Serialize;
 use serde::Deserialize;
+use toml::Value::Boolean;
 
 #[derive(Debug, Clone, clap::Parser)]
 pub struct CliArgs {
@@ -38,16 +39,18 @@ pub struct WeatherConfig {
     pub latitude: f32,
     pub longitude: f32,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub forecast_days: Option<u16>,
-    pub daily: Vec<String>,
-    pub hourly: Vec<String>,
-    pub current: Vec<String>,
-    pub models: Vec<String>,
+    
+    #[serde(flatten)]
+    pub config: serde_json::Value,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub timezone: Option<String>
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timezone: Option<String>,
 }
+
+#[inline]
+const fn include_code() -> bool { true }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct DepartureConfig {
