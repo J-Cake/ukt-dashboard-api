@@ -20,17 +20,23 @@ services:
       context: '..'
       dockerfile: './dev/Dockerfile'
       target: api
+      tags:
+        - azubitafel-api:latest
     container_name: 'api'
     restart: 'unless-stopped'
     volumes:
       - config:/config
-    command: ["api", "-c", "/config/config.toml"]
+    environment:
+      - RUST_LOG=api=debug,common=debug,info
+    command: ["/bin/api", "-c", "/config/config.toml"]
 
   kiosk:
     build:
       context: '..'
       dockerfile: './dev/Dockerfile'
-      target: api
+      target: kiosk
+      tags:
+        - azubitafel-kiosk:latest
     devices:
       - /dev/dri:/dev/dri
       - /dev/input:/dev/input
@@ -39,6 +45,7 @@ services:
     environment:
       - XDG_RUNTIME_DIR=/tmp
       - KIOSK_HOME=http://public
+      - RUST_LOG=webview=debug,common=debug,info
 
 volumes:
   data:

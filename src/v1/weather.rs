@@ -13,6 +13,8 @@ use std::time::SystemTime;
 use serde::Deserialize;
 use serde::Serialize;
 
+const WEATHER_API: &'static str = "https://api.open-meteo.com/v1/forecast";
+
 #[derive(Debug, Default, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ForecastParams {
     days: Option<u16>,
@@ -47,7 +49,7 @@ pub async fn forecast(newer_than: Option<web::Header<actix_web::http::header::Da
             };
 
             let mut uri =
-                Url::parse("https://api.open-meteo.com/v1/forecast").map_err(io::Error::other)?;
+                Url::parse(WEATHER_API).map_err(io::Error::other)?;
 
             let query = serde_qs::to_string(&WeatherConfig {
                 forecast_days: query.days.or(cfg.weather.forecast_days),
@@ -79,8 +81,6 @@ pub async fn forecast(newer_than: Option<web::Header<actix_web::http::header::Da
                     return Err(std::io::Error::other(err));
                 }
             };
-
-            log::debug!("weather: {res:#?}");
 
             Ok(WeatherState {
                 time: SystemTime::now(),

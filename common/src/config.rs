@@ -14,7 +14,7 @@ pub struct CliArgs {
 pub struct Config {
     pub bind: BindConfig,
     pub weather: WeatherConfig,
-    pub departure: DepartureConfig,
+    pub departure: Vec<DepartureConfig>,
 
     #[serde(skip)]
     pub source: Option<PathBuf>
@@ -51,8 +51,7 @@ pub struct WeatherConfig {
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct DepartureConfig {
-    pub point: Option<String>,
-    pub lines: Vec<String>,
+    pub point: String,
 
     #[serde(default = "default_show_next_time_window")]
     pub show_next: Duration

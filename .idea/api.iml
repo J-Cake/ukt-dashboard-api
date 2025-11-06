@@ -7,6 +7,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/stopfinder/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/webview/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/enumerate/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
       <excludeFolder url="file://$MODULE_DIR$/webview/target" />
     </content>

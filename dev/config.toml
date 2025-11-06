@@ -4,12 +4,30 @@ socket = "[::]:1920"
 [weather]
 latitude = 48.5227
 longitude = 9.0522
-current = ["temperature_2m", "is_day", "precipitation", "wind_speed_10m"]
-hourly = ["temperature_2m", "rain", "precipitation", "wind_speed_10m"]
-daily = ["precipitation_sum", "temperature_2m_max", "temperature_2m_min", "wind_speed_10m_max"]
+daily = [
+    "precipitation_sum",
+    "temperature_2m_max",
+    "temperature_2m_min",
+    "wind_speed_10m_max",
+]
+hourly = [
+    "temperature_2m",
+    "rain",
+    "precipitation",
+    "wind_speed_10m",
+]
+current = [
+    "temperature_2m",
+    "is_day",
+    "precipitation",
+    "wind_speed_10m",
+]
 models = ["icon_seamless"]
 timezone = "Europe/Berlin"
 
-[departure]
-point = "de:08416:10715"
-lines = []
+[[departure]]
+point = "de:08416:10103"
+
+[departure.show_next]
+secs = 0
+nanos = 0
