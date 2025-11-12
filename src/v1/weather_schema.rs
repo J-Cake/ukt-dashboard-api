@@ -11,6 +11,7 @@ nestify::nest! {
                 pub wind_speed: f64,
                 pub precipitation: f64,
                 pub temperature: f64,
+                pub code: u64,
                 pub weather: #[repr(u8)] pub enum PresentWeather {
                     // 00-19 No precipitation etc
                     CloudDevelopmentNotObserved                               = 0,   // 00: Cloud development not observed or not observable

@@ -103,6 +103,7 @@ fn convert_to_weather_state(incoming: WeatherSchema) -> Option<WeatherState> {
         wind_speed: incoming.current.get("wind_speed_10m")?.as_f64()?,
         precipitation: incoming.current.get("precipitation")?.as_f64()?,
         weather: PresentWeather::from_code(incoming.current.get("weather_code")?.as_u64()? as u8)?,
+        code: incoming.current.get("weather_code")?.as_u64()?
     };
 
     // &daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max
@@ -115,6 +116,7 @@ fn convert_to_weather_state(incoming: WeatherSchema) -> Option<WeatherState> {
                     incoming.daily.get("temperature_2m_max")?.as_array()?.get(a)?.as_f64()?
             ) / 2.0,
             weather: PresentWeather::from_code(incoming.daily.get("weather_code")?.as_array()?.get(a)?.as_u64()? as u8)?,
+            code: incoming.daily.get("weather_code")?.as_array()?.get(a)?.as_u64()?,
         }))
         .collect::<Option<Vec<_>>>()?;
 
