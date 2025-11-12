@@ -55,9 +55,4 @@ const fn include_code() -> bool { true }
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct DepartureConfig {
     pub point: String,
-
-    #[serde(default = "default_show_next_time_window")]
-    pub show_next: Duration
 }
-
-fn default_show_next_time_window() -> Duration { Duration::from_hours(1) }

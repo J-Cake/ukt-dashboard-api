@@ -1,16 +1,20 @@
+use crate::v1::buses_schema::{BusSchema, DepartureBoardStop, DepartureList};
+use crate::v1::buses_schema::RealDateTimeClass;
 use crate::Result;
 use actix_web::HttpResponse;
 use actix_web::Responder;
 use chrono::Local;
 use chrono::TimeZone;
 use common::config::Config;
-use common::prelude::DepartureConfig;
+use common::prelude::tokio::sync::Mutex;
+use common::prelude::tokio::task::JoinSet;
+use common::prelude::{tokio, DepartureConfig};
 use reqwest::Url;
 use serde::Deserialize;
 use serde::Serialize;
+use std::collections::HashMap;
 use std::io::Error;
-use crate::v1::buses_schema::BusSchema;
-use crate::v1::buses_schema::RealDateTimeClass;
+use std::sync::Arc;
 
 const BUS_API: &'static str = "https://www.efa-bw.de/mobidata-bw/XML_DM_REQUEST";
 
@@ -32,7 +36,6 @@ pub struct Query {
     //
     // #[serde(rename = "itdTime")]
     // time: String,
-
     limit: usize,
 
     #[serde(rename = "itdDateTimeDepArr")]
@@ -67,10 +70,11 @@ impl Query {
     }
 }
 
-impl From<&DepartureConfig> for Query {
-    fn from(value: &DepartureConfig) -> Self {
+impl From<&Vec<DepartureConfig>> for Query {
+    fn from(value: &Vec<DepartureConfig>) -> Self {
         Self {
-            stop_id: value.point.clone(),
+            stop_id: value.iter().map(|i| &i.point).cloned().collect(),
+            include_proximate: 0,
             ..Default::default()
         }
     }
@@ -78,54 +82,22 @@ impl From<&DepartureConfig> for Query {
 
 #[actix_web::get("/buses")]
 pub async fn buses(cfg: actix_web::web::Data<Config>) -> Result<impl Responder> {
-    let client = reqwest::ClientBuilder::new()
-        .build()
-        .map_err(Error::other)?;
+    let mut tasks = JoinSet::new();
 
-    let Some(stop) = cfg.departure.get(0) else {
-        return Ok(HttpResponse::NotFound()
-            .json(serde_json::json! {{
-
-            }}))
-    };
-
-    let mut uri = Url::parse(BUS_API)
-        .map_err(Error::other)?;
-
-    let query = serde_qs::to_string(&Query::from(stop))
-        .map_err(Error::other)?;
-
-    uri.set_query(Some(&query));
-
-    log::debug!("Bus URL: {uri:?}", uri=uri.to_string());
-
-    let req = client.get(uri)
-        .send()
-        .await
-        .expect("Failed to get buses");
-
-    let res: BusSchema = req.json()
-        .await
-        .expect("Failed to get buses");
-
-    let lines = res.departure_list
-        .iter()
-        .map(|line| {
-            let eta = parse_date_time(line.real_date_time.clone()
-                .unwrap_or(line.date_time.clone()))
-                .map_err(Error::other)?;
-
-            Ok(serde_json::json! {{
-                "line": line.serving_line.symbol,
-                "direction": line.serving_line.direction,
-                "expectedArrival": eta
-            }})
+    for stop in cfg.departure.iter().map(|i| i.point.clone()) {
+        tasks.spawn(async move {
+            (stop.clone(), get_times(stop.clone()).await)
         });
+    }
 
-    Ok(HttpResponse::Ok()
-        .json(serde_json::json! {{
-            "lines": lines.collect::<Result<Vec<_>>>()?
-        }}))
+    let stops = tasks.join_all().await
+        .into_iter()
+        .map(|(stop, list)| list.map(|i| (stop, i)))
+        .collect::<Result<HashMap<String, Vec<DepartureBoardStop>>>>()?;
+
+    Ok(HttpResponse::Ok().json(serde_json::json! {{
+        "stops": stops
+    }}))
 }
 
 fn parse_date_time(date: RealDateTimeClass) -> Result<chrono::DateTime<Local>> {
@@ -134,7 +106,7 @@ fn parse_date_time(date: RealDateTimeClass) -> Result<chrono::DateTime<Local>> {
         date.month.parse::<u32>().map_err(Error::other)?,
         date.day.parse::<u32>().map_err(Error::other)?,
         date.hour.parse::<u32>().map_err(Error::other)?,
-        date.minute.parse::<u32>().map_err(Error::other)?
+        date.minute.parse::<u32>().map_err(Error::other)?,
     );
 
     let date = chrono::NaiveDate::from_ymd_opt(yyyy, MM, dd);
@@ -145,4 +117,44 @@ fn parse_date_time(date: RealDateTimeClass) -> Result<chrono::DateTime<Local>> {
         .ok_or(Error::other("No time provided"))?;
 
     Ok(Local.from_local_datetime(&datetime).unwrap())
+}
+
+async fn get_times(stop: String) -> Result<Vec<DepartureBoardStop>> {
+    let mut uri = Url::parse(BUS_API).map_err(Error::other)?;
+    let client = reqwest::ClientBuilder::new()
+        .build()
+        .map_err(Error::other)?;
+
+    let query = serde_qs::to_string(&Query {
+        stop_id: stop.to_string(),
+        ..Default::default()
+    })
+    .map_err(Error::other)?;
+
+    uri.set_query(Some(&query));
+
+    log::debug!("Bus URL: {uri:?}", uri = uri.to_string());
+
+    let req = client.get(uri).send().await.expect("Failed to get buses");
+
+    let res: BusSchema = req.json().await.expect("Failed to get buses");
+
+    res.departure_list
+        .iter()
+        .map(|line| {
+            let eta = parse_date_time(
+                line.real_date_time
+                    .clone()
+                    .unwrap_or(line.date_time.clone()),
+            )
+            .map_err(Error::other)?;
+
+            Ok(DepartureBoardStop {
+                stop: stop.clone(),
+                line: line.serving_line.symbol.to_string(),
+                direction: line.serving_line.direction.to_string(),
+                expected_arrival: eta
+            })
+        })
+        .collect()
 }

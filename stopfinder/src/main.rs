@@ -120,7 +120,6 @@ async fn save_point(point: &prelude::Point) -> Result<()> {
 
     config.departure.push(DepartureConfig {
         point: point.ids.gid.clone(),
-        show_next: Default::default(),
     });
 
     tokio::fs::write(&path, toml::to_string_pretty(&config).map_err(Error::other)?).await?;

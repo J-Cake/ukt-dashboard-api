@@ -10,6 +10,5 @@ timezone = "Europe/Berlin"
 [[departure]]
 point = "de:08416:10103"
 
-[departure.show_next]
-secs = 0
-nanos = 0
+[[departure]]
+point = "de:08416:10104"

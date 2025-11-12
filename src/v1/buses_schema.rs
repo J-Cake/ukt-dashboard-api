@@ -1,3 +1,4 @@
+use chrono::Local;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -5,19 +6,13 @@ use serde::{Deserialize, Serialize};
 pub struct BusSchema {
     parameters: Vec<Parameter>,
     dm: Dm,
-    arr: Arr,
+    // arr: Arr,
     date_time: DateTime,
     date_range: Vec<DateRange>,
     #[serde(rename = "option")]
     json_schema_option: JsonSchemaOption,
     serving_lines: ServingLines,
     pub(crate) departure_list: Vec<DepartureList>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Arr {
-    input: Input,
-    points: Option<serde_json::Value>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -299,4 +294,13 @@ pub struct Diva {
     #[serde(rename = "isSTT")]
     is_stt: String,
     attrs: Vec<Parameter>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct DepartureBoardStop {
+    pub stop: String,
+    pub line: String,
+    pub direction: String,
+    #[serde(rename = "expectedArrival")]
+    pub expected_arrival: chrono::DateTime<Local>
 }
