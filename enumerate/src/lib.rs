@@ -1,7 +1,7 @@
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{
-    parse_macro_input, punctuated::Punctuated, Data, DeriveInput, Ident, Lit, Meta, Token,
+    parse_macro_input, punctuated::Punctuated, Data, DeriveInput, Lit, Meta, Token,
 };
 
 #[proc_macro_derive(Enumerate, attributes(alt))]

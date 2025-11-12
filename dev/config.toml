@@ -4,26 +4,6 @@ socket = "[::]:1920"
 [weather]
 latitude = 48.5227
 longitude = 9.0522
-daily = [
-    "precipitation_sum",
-    "temperature_2m_max",
-    "temperature_2m_min",
-    "wind_speed_10m_max",
-    "weather_code"
-]
-#hourly = [
-#    "temperature_2m",
-#    "rain",
-#    "precipitation",
-#    "wind_speed_10m",
-#]
-current = [
-    "temperature_2m",
-    "is_day",
-    "precipitation",
-    "wind_speed_10m",
-    "weather_code"
-]
 models = ["icon_seamless"]
 timezone = "Europe/Berlin"
 

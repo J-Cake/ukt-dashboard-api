@@ -1,8 +1,25 @@
 localhost {
-    root /www
-    file_server
+    # API routes
+    handle_path /api/* {
+        reverse_proxy api:1920
+    }
 
-    handle_path /api {
-        reverse_proxy http://api:1920
+    # Everything else: static + SPA fallback
+    handle {
+        @notAPI {
+            not path /api/*
+        }
+
+        handle @notAPI {
+            root * /www
+            try_files {path} /
+            file_server
+        }
+    }
+
+    tls internal
+
+    @http3 {
+        protocol h3
     }
 }

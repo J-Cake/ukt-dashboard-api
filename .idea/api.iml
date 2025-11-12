@@ -5,6 +5,7 @@
       <sourceFolder url="file://$MODULE_DIR$/common/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/examples" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/app/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/stopfinder/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/webview/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/enumerate/src" isTestSource="false" />
