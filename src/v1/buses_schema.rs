@@ -1,4 +1,4 @@
-use chrono::Local;
+use chrono::{Local, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -52,7 +52,7 @@ pub struct DepartureList {
     area: String,
     platform: String,
     platform_name: String,
-    stop_name: String,
+    pub stop_name: String,
     #[serde(rename = "nameWO")]
     name_wo: String,
     countdown: String,
@@ -301,6 +301,7 @@ pub struct DepartureBoardStop {
     pub stop: String,
     pub line: String,
     pub direction: String,
+
     #[serde(rename = "expectedArrival")]
     pub expected_arrival: chrono::DateTime<Local>
 }

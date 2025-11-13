@@ -3,8 +3,8 @@ use crate::v1::buses_schema::RealDateTimeClass;
 use crate::Result;
 use actix_web::HttpResponse;
 use actix_web::Responder;
-use chrono::Local;
-use chrono::TimeZone;
+// use chrono::Local;
+use chrono::{Local, TimeZone, Utc};
 use common::config::Config;
 use common::prelude::tokio::sync::Mutex;
 use common::prelude::tokio::task::JoinSet;
@@ -116,6 +116,8 @@ fn parse_date_time(date: RealDateTimeClass) -> Result<chrono::DateTime<Local>> {
         .and_then(|date| Some(date.and_time(time?)))
         .ok_or(Error::other("No time provided"))?;
 
+    log::debug!("Assuming Timezone: {tz}", tz=Local::now().offset());
+
     Ok(Local.from_local_datetime(&datetime).unwrap())
 }
 
@@ -150,7 +152,7 @@ async fn get_times(stop: String) -> Result<Vec<DepartureBoardStop>> {
             .map_err(Error::other)?;
 
             Ok(DepartureBoardStop {
-                stop: stop.clone(),
+                stop: line.stop_name.clone(),
                 line: line.serving_line.symbol.to_string(),
                 direction: line.serving_line.direction.to_string(),
                 expected_arrival: eta
