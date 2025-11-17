@@ -12,3 +12,6 @@ point = "de:08416:10103"
 
 [[departure]]
 point = "de:08416:10104"
+
+[app]
+refreshInterval = 60_000

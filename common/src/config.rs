@@ -17,6 +17,8 @@ pub struct Config {
     pub weather: WeatherConfig,
     pub departure: Vec<DepartureConfig>,
 
+    pub app: AppConfig,
+
     #[serde(skip)]
     pub source: Option<PathBuf>
 }
@@ -56,3 +58,11 @@ const fn include_code() -> bool { true }
 pub struct DepartureConfig {
     pub point: String,
 }
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppConfig {
+    pub refresh_interval: Milliseconds
+}
+
+pub type Milliseconds = u32;
