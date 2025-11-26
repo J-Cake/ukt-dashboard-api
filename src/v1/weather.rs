@@ -54,8 +54,8 @@ pub async fn forecast(newer_than: Option<web::Header<actix_web::http::header::Da
             let query = serde_qs::to_string(&WeatherConfig {
                 forecast_days: query.days.or(cfg.weather.forecast_days),
                 config: serde_json::json! {{
-                    "daily": ["weather_code", "temperature_2m_max", "temperature_2m_min", "precipitation_sum", "wind_speed_10m_max", "relative_humidity_2m"],
-                    "current": ["temperature_2m", "relative_humidity_2m", "precipitation", "weather_code", "wind_speed_10m", "is_day", "relative_humidity_2m"]
+                    "daily": ["weather_code", "temperature_2m_max", "temperature_2m_min", "precipitation_sum", "wind_speed_10m_max"],
+                    "current": ["temperature_2m", "relative_humidity_2m", "precipitation", "weather_code", "wind_speed_10m", "is_day"]
                 }},
                 ..cfg.weather.clone()
             })
@@ -111,7 +111,7 @@ fn convert_to_weather_state(incoming: WeatherSchema) -> Option<WeatherState> {
     let daily = (0..incoming.daily.get("weather_code")?.as_array()?.len())
         .map(|a| Some(WeatherDay {
             precipitation: incoming.daily.get("precipitation_sum")?.as_array()?.get(a)?.as_f64()?,
-            humidity: incoming.daily.get("humidity_sum")?.as_array()?.get(a)?.as_f64()?,
+            humidity: f64::NEG_INFINITY,
             wind_speed: incoming.daily.get("wind_speed_10m_max")?.as_array()?.get(a)?.as_f64()?,
             temperature: (
                 incoming.daily.get("temperature_2m_min")?.as_array()?.get(a)?.as_f64()? +
