@@ -10,6 +10,7 @@ nestify::nest! {
             pub current: pub struct WeatherDay {
                 pub wind_speed: f64,
                 pub precipitation: f64,
+                pub humidity: f64,
                 pub temperature: f64,
                 pub code: u64,
                 pub weather: #[repr(u8)] pub enum PresentWeather {

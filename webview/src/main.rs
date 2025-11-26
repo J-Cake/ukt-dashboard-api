@@ -4,7 +4,7 @@ use tao::event_loop::ControlFlow;
 use tao::event_loop::EventLoop;
 use tao::platform::unix::{WindowBuilderExtUnix, WindowExtUnix};
 use tao::window::Fullscreen;
-use wry::WebViewBuilder;
+use wry::{WebViewBuilder, WebViewExtUnix};
 use wry::WebViewBuilderExtUnix;
 
 fn main() -> wry::Result<()> {
