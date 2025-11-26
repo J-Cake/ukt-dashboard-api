@@ -1,3 +1,3 @@
 [submodule "app"]
 	path = app
-	url = git@github.com:Kaiser187/UKT-Monitoring-dashboard.git
+	url = https://github.com/Kaiser187/UKT-Monitoring-dashboard.git
