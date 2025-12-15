@@ -5,6 +5,7 @@ nestify::nest! {
     #[derive(Debug, Clone, Serialize, Deserialize)]*
     pub struct WeatherState {
         pub time: SystemTime,
+        pub city: String,
         pub response: pub struct WeatherResponse {
             pub is_day: bool,
             pub current: pub struct WeatherDay {
@@ -247,13 +248,13 @@ impl PresentWeather {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WeatherSchema {
-    latitude: f64,
-    longitude: f64,
-    generationtime_ms: f64,
-    utc_offset_seconds: f64,
-    timezone: String,
-    timezone_abbreviation: String,
-    elevation: f64,
+    pub(crate) latitude: f64,
+    pub(crate) longitude: f64,
+    pub(crate) generationtime_ms: f64,
+    pub(crate) utc_offset_seconds: f64,
+    pub(crate) timezone: String,
+    pub(crate) timezone_abbreviation: String,
+    pub(crate) elevation: f64,
     pub(crate) current: serde_json::Value,
     pub(crate) daily: serde_json::Value,
 }

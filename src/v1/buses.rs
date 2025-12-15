@@ -151,11 +151,18 @@ async fn get_times(stop: String) -> Result<Vec<DepartureBoardStop>> {
             )
             .map_err(Error::other)?;
 
+            let given_eta = parse_date_time(
+                line.date_time
+                    .clone(),
+            )
+            .map_err(Error::other)?;
+
             Ok(DepartureBoardStop {
                 stop: line.stop_name.clone(),
                 line: line.serving_line.symbol.to_string(),
                 direction: line.serving_line.direction.to_string(),
-                expected_arrival: eta
+                expected_arrival: eta,
+                given_arrival: given_eta
             })
         })
         .collect()

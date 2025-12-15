@@ -303,5 +303,8 @@ pub struct DepartureBoardStop {
     pub direction: String,
 
     #[serde(rename = "expectedArrival")]
-    pub expected_arrival: chrono::DateTime<Local>
+    pub expected_arrival: chrono::DateTime<Local>,
+
+    #[serde(rename = "givenArrival")]
+    pub given_arrival: chrono::DateTime<Local>
 }
