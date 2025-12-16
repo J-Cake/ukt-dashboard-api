@@ -1,20 +1,21 @@
-use crate::v1::buses_schema::{BusSchema, DepartureBoardStop, DepartureList};
+use crate::v1::buses_schema::BusSchema;
+use crate::v1::buses_schema::DepartureBoardStop;
 use crate::v1::buses_schema::RealDateTimeClass;
 use crate::Result;
 use actix_web::HttpResponse;
 use actix_web::Responder;
-// use chrono::Local;
-use chrono::{Local, TimeZone, Utc};
+use chrono::Local;
+use chrono::TimeZone;
 use common::config::Config;
-use common::prelude::tokio::sync::Mutex;
 use common::prelude::tokio::task::JoinSet;
-use common::prelude::{tokio, DepartureConfig};
+use common::prelude::DepartureConfig;
 use reqwest::Url;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::io::Error;
-use std::sync::Arc;
+use std::time::{Duration, SystemTime};
+use crate::cache::Cache;
 
 const BUS_API: &'static str = "https://www.efa-bw.de/mobidata-bw/XML_DM_REQUEST";
 
@@ -80,13 +81,18 @@ impl From<&Vec<DepartureConfig>> for Query {
     }
 }
 
+static DEPARTURES: Cache<String, Vec<DepartureBoardStop>> = Cache::new(Duration::from_secs(10));
+
 #[actix_web::get("/buses")]
 pub async fn buses(cfg: actix_web::web::Data<Config>) -> Result<impl Responder> {
     let mut tasks = JoinSet::new();
 
     for stop in cfg.departure.iter().map(|i| i.point.clone()) {
+
         tasks.spawn(async move {
-            (stop.clone(), get_times(stop.clone()).await)
+            (stop.clone(), DEPARTURES.get(stop.clone(), async || {
+                get_times(stop.clone()).await
+            }).await)
         });
     }
 
@@ -96,6 +102,7 @@ pub async fn buses(cfg: actix_web::web::Data<Config>) -> Result<impl Responder> 
         .collect::<Result<HashMap<String, Vec<DepartureBoardStop>>>>()?;
 
     Ok(HttpResponse::Ok().json(serde_json::json! {{
+        "time": SystemTime::now(),
         "stops": stops
     }}))
 }

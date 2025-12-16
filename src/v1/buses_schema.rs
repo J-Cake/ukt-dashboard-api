@@ -296,7 +296,7 @@ pub struct Diva {
     attrs: Vec<Parameter>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct DepartureBoardStop {
     pub stop: String,
     pub line: String,
