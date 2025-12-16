@@ -116,7 +116,7 @@ fn parse_date_time(date: RealDateTimeClass) -> Result<chrono::DateTime<Local>> {
         .and_then(|date| Some(date.and_time(time?)))
         .ok_or(Error::other("No time provided"))?;
 
-    log::debug!("Assuming Timezone: {tz}", tz=Local::now().offset());
+    // log::trace!("Assuming Timezone: {tz}", tz=Local::now().offset());
 
     Ok(Local.from_local_datetime(&datetime).unwrap())
 }

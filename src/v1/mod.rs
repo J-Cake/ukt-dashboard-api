@@ -10,6 +10,7 @@ pub fn v1() -> actix_web::Scope {
     actix_web::web::scope("/v1")
         .service(version)
         .service(config::config)
+        .service(weather::current)
         .service(weather::forecast)
         .service(buses::buses)
 }

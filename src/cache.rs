@@ -18,7 +18,7 @@ struct CacheEntry<Value> {
 
 impl<Value> CacheEntry<Value> {
     pub fn expired(&self) -> bool {
-        self.expiry > SystemTime::now()
+        self.expiry < SystemTime::now()
     }
 }
 
@@ -35,11 +35,13 @@ impl<Key: Hash + Eq + Clone, Value: Clone> Cache<Key, Value> {
 
         if let Some(value) = read.get(&key)
             && !value.expired() {
+            log::trace!("Reusing cache value: {lifetime:?}", lifetime=&self.lifetime);
             return Ok(value.entry.clone());
         }
 
         drop(read);
 
+        log::trace!("Fetching new value");
         let mut write = self.cache.write().await;
         let _ = write.insert(
             key.clone(),

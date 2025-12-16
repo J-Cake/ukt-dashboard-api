@@ -31,17 +31,93 @@ static WEATHER_CACHE: Cache<ForecastParams, WeatherState> = Cache::new(Duration:
 static CITY_NAME: Cache<Coordinate, String> = Cache::new(Duration::from_hours(12));
 type Coordinate = String;
 
+#[actix_web::get("/current")]
+pub async fn current(query: web::Query<ForecastParams>, cfg: web::Data<Config>) -> Result<impl Responder> {
+    let weather = get_weather(query.0.clone(), &cfg).await?;
+
+    Ok(HttpResponse::Ok().json(serde_json::json! {{
+        "time": weather.time,
+        "city": weather.city,
+        "is_day": weather.response.is_day,
+        "current": weather.response.current,
+    }}))
+}
+
 #[actix_web::get("/forecast")]
-pub async fn forecast(newer_than: Option<web::Header<actix_web::http::header::Date>>, query: web::Query<ForecastParams>, cfg: web::Data<Config>) -> Result<impl Responder> {
-    if let Some(newer_than) = newer_than {
-        let newer_than = SystemTime::from(newer_than.0.0);
+pub async fn forecast(query: web::Query<ForecastParams>, cfg: web::Data<Config>) -> Result<impl Responder> {
+    let weather = get_weather(query.0.clone(), &cfg).await?;
 
-        if WEATHER_CACHE.get_last_modified_time(&query.0).await.is_some_and(|modified| modified < newer_than) {
-            return Ok(HttpResponse::NotModified().finish());
+    Ok(HttpResponse::Ok().json(serde_json::json! {{
+        "time": weather.time,
+        "city": weather.city,
+        "forecast": weather.response.daily,
+    }}))
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LatLongCityResolverQueryString {
+    latitude: f64,
+    longitude: f64,
+    locality_language: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CityResponse {
+    latitude: f64,
+    longitude: f64,
+    continent: String,
+    continent_code: String,
+    country_name: String,
+    country_code: String,
+    city: String,
+    locality: String,
+    postcode: String,
+    plus_code: String,
+}
+
+async fn get_city_name(lat: f64, long: f64) -> Result<String> {
+    let qs = serde_qs::to_string(&(lat, long)).map_err(Error::other)?;
+
+    CITY_NAME.get(qs.clone(), async || {
+        let api = match reqwest::ClientBuilder::new().build() {
+            Ok(client) => client,
+            Err(err) => return Err(io::Error::other(err)),
+        };
+
+        let mut uri = Url::parse(CITY_NAME_API).map_err(io::Error::other)?;
+
+        let query = serde_qs::to_string(&LatLongCityResolverQueryString {
+            latitude: lat,
+            longitude: long,
+            locality_language: "default".into(),
+        })
+        .map_err(io::Error::other)?;
+
+        uri.set_query(Some(&query));
+
+        match api.get(uri).header("Accept", "application/json").send().await {
+            Ok(req) => match req.json::<CityResponse>().await {
+                Ok(res) => {
+                    log::debug!("Resolved to city: {city}, {locality}", city=res.city, locality=res.locality);
+                    Ok(format!("{city}, {locality}", city = res.city, locality = res.locality))
+                },
+                Err(err) => {
+                    log::error!("Response Error: {err:?}");
+                    return Err(std::io::Error::other(err));
+                }
+            },
+            Err(err) => {
+                log::error!("Reqwest Error: {err:?}");
+                return Err(std::io::Error::other(err));
+            }
         }
-    }
+    }).await
+}
 
-    let weather = WEATHER_CACHE.get(query.0.clone(), async || {
+async fn get_weather(query: ForecastParams, cfg: &Config) -> Result<WeatherState> {
+    WEATHER_CACHE.get(query.clone(), async || {
         let api = match reqwest::ClientBuilder::new().build() {
             Ok(client) => client,
             Err(err) => return Err(io::Error::other(err)),
@@ -80,22 +156,10 @@ pub async fn forecast(newer_than: Option<web::Header<actix_web::http::header::Da
                 return Err(std::io::Error::other(err));
             }
         }
-    }).await?;
-
-    Ok(HttpResponse::Ok().json(weather))
+    }).await
 }
 
 async fn convert_to_weather_state(incoming: WeatherSchema) -> Option<WeatherState> {
-    // &current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,is_day,relative_humidity_2m
-    let current = WeatherDay {
-        temperature: incoming.current.get("temperature_2m")?.as_f64()?,
-        wind_speed: incoming.current.get("wind_speed_10m")?.as_f64()?,
-        precipitation: incoming.current.get("precipitation")?.as_f64()?,
-        humidity: incoming.current.get("relative_humidity_2m")?.as_f64()?,
-        weather: PresentWeather::from_code(incoming.current.get("weather_code")?.as_u64()? as u8)?,
-        code: incoming.current.get("weather_code")?.as_u64()?,
-    };
-
     // &daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,relative_humidity_2m
     let daily = (0..incoming.daily.get("weather_code")?.as_array()?.len())
         .map(|a| {
@@ -143,72 +207,16 @@ async fn convert_to_weather_state(incoming: WeatherSchema) -> Option<WeatherStat
         response: WeatherResponse {
             is_day: incoming.current.get("is_day")?.as_u64()? == 1,
 
-            current,
+            // &current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,is_day,relative_humidity_2m
+            current: WeatherDay {
+                temperature: incoming.current.get("temperature_2m")?.as_f64()?,
+                wind_speed: incoming.current.get("wind_speed_10m")?.as_f64()?,
+                precipitation: incoming.current.get("precipitation")?.as_f64()?,
+                humidity: incoming.current.get("relative_humidity_2m")?.as_f64()?,
+                weather: PresentWeather::from_code(incoming.current.get("weather_code")?.as_u64()? as u8)?,
+                code: incoming.current.get("weather_code")?.as_u64()?,
+            },
             daily,
         },
     })
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct LatLongCityResolverQueryString {
-    latitude: f64,
-    longitude: f64,
-    locality_language: String,
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct CityResponse {
-    latitude: f64,
-    longitude: f64,
-    continent: String,
-    continent_code: String,
-    country_name: String,
-    country_code: String,
-    city: String,
-    locality: String,
-    postcode: String,
-    plus_code: String,
-}
-
-async fn get_city_name(lat: f64, long: f64) -> Result<String> {
-    let qs = serde_qs::to_string(&(lat, long)).map_err(Error::other)?;
-
-    CITY_NAME
-        .get(qs.clone(), async || {
-            let api = match reqwest::ClientBuilder::new().build() {
-                Ok(client) => client,
-                Err(err) => return Err(io::Error::other(err)),
-            };
-
-            let mut uri = Url::parse(CITY_NAME_API).map_err(io::Error::other)?;
-
-            let query = serde_qs::to_string(&LatLongCityResolverQueryString {
-                latitude: lat,
-                longitude: long,
-                locality_language: "default".into(),
-            })
-            .map_err(io::Error::other)?;
-
-            uri.set_query(Some(&query));
-
-            match api.get(uri).header("Accept", "application/json").send().await {
-                Ok(req) => match req.json::<CityResponse>().await {
-                    Ok(res) => {
-                        log::debug!("Resolved to city: {city}, {locality}", city=res.city, locality=res.locality);
-                        Ok(format!("{city}, {locality}", city = res.city, locality = res.locality))
-                    },
-                    Err(err) => {
-                        log::error!("Response Error: {err:?}");
-                        return Err(std::io::Error::other(err));
-                    }
-                },
-                Err(err) => {
-                    log::error!("Reqwest Error: {err:?}");
-                    return Err(std::io::Error::other(err));
-                }
-            }
-        })
-        .await
 }
