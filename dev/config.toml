@@ -15,3 +15,4 @@ point = "de:08416:10104"
 
 [app]
 refreshInterval = 60_000
+colourScheme = "Dark"

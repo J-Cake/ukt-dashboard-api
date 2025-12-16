@@ -51,9 +51,6 @@ pub struct WeatherConfig {
     pub timezone: Option<String>,
 }
 
-#[inline]
-const fn include_code() -> bool { true }
-
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct DepartureConfig {
     pub point: String,
@@ -62,7 +59,18 @@ pub struct DepartureConfig {
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppConfig {
-    pub refresh_interval: Milliseconds
+    pub refresh_interval: Milliseconds,
+
+    pub colour_scheme: ColourScheme
 }
 
 pub type Milliseconds = u32;
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub enum ColourScheme {
+    #[default]
+    Inherit,
+    Weather,
+    Dark,
+    Light
+}
