@@ -1,4 +1,4 @@
-localhost {
+azubitafel.local azubitafel.this {
     # API routes
     handle_path /api/* {
         reverse_proxy api:1920
@@ -17,7 +17,8 @@ localhost {
         }
     }
 
-    tls internal
+#    tls internal
+    tls /config/tls/service.crt /config/tls/service.key
 
     @http3 {
         protocol h3
